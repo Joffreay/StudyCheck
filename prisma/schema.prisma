@@ -1,0 +1,346 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  READER
+  ADMIN
+}
+
+enum ScreeningStatus {
+  PENDING
+  RETAIN
+  EXCLUDE
+  UNCERTAIN
+}
+
+enum CriterionAssessment {
+  NOT_ASSESSED
+  MET
+  NOT_MET
+  UNCLEAR
+}
+
+enum ImportFormat {
+  RIS
+  NBIB
+  CSV
+}
+
+enum ImportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum DuplicateGroupStatus {
+  OPEN
+  MERGED
+  DISMISSED
+}
+
+enum AuditAction {
+  IMPORT_STARTED
+  IMPORT_COMPLETED
+  DUPLICATE_MERGED
+  DUPLICATE_DISMISSED
+  DECISION_RECORDED
+  DECISION_CHANGED
+  CALIBRATION_RESOLVED
+  EXPORT_GENERATED
+  SCORING_RECOMPUTED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         UserRole @default(READER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  screeningDecisions ScreeningDecision[]
+  decisionEvents     DecisionEvent[]
+  auditLogs          AuditLog[]
+  sessions           Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+}
+
+model ReviewProject {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  importBatches    ImportBatch[]
+  references       Reference[]
+  duplicateGroups  DuplicateGroup[]
+  calibrationSets  CalibrationSet[]
+  exclusionReasons ExclusionReason[]
+  auditLogs        AuditLog[]
+}
+
+model ImportBatch {
+  id              String       @id @default(cuid())
+  projectId       String
+  filename        String
+  format          ImportFormat
+  sourceDatabase  String
+  status          ImportStatus @default(PENDING)
+  recordsTotal    Int          @default(0)
+  recordsImported Int          @default(0)
+  recordsSkipped  Int          @default(0)
+  errorMessage    String?
+  importedAt      DateTime?
+  createdAt       DateTime     @default(now())
+
+  project  ReviewProject     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sources  ReferenceSource[]
+
+  @@index([projectId])
+}
+
+model Reference {
+  id                String   @id @default(cuid())
+  projectId         String
+  canonicalKey      String
+  title             String
+  titleNormalized   String
+  abstract          String?
+  keywords          String[] @default([])
+  meshTerms         String[] @default([])
+  language          String?
+  publicationType   String?
+  year              Int?
+  authors           Json?
+  doi               String?
+  pmid              String?
+  journal           String?
+  volume            String?
+  issue             String?
+  pages             String?
+  hasAbstract       Boolean  @default(false)
+  infoCompleteness  Int      @default(100)
+  infoGapFlags      String[] @default([])
+  isCanonical       Boolean  @default(true)
+  mergedIntoId      String?
+  duplicateGroupId  String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  project         ReviewProject      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  mergedInto      Reference?         @relation("ReferenceMerge", fields: [mergedIntoId], references: [id])
+  mergedFrom      Reference[]        @relation("ReferenceMerge")
+  duplicateGroup  DuplicateGroup?    @relation(fields: [duplicateGroupId], references: [id])
+  sources         ReferenceSource[]
+  tags            ReferenceTag[]
+  scoringResults  ScoringResult[]
+  screeningDecisions ScreeningDecision[]
+  decisionEvents  DecisionEvent[]
+  criterionAssessments CriterionAssessmentRecord[]
+
+  @@unique([projectId, canonicalKey])
+  @@index([projectId, isCanonical])
+  @@index([projectId, mergedIntoId])
+  @@index([doi])
+  @@index([pmid])
+  @@index([titleNormalized])
+}
+
+model ReferenceSource {
+  id             String @id @default(cuid())
+  referenceId    String
+  importBatchId  String
+  sourceDatabase String
+  externalIds    Json   @default("{}")
+  rawRecord      Json
+
+  reference   Reference   @relation(fields: [referenceId], references: [id], onDelete: Cascade)
+  importBatch ImportBatch @relation(fields: [importBatchId], references: [id], onDelete: Cascade)
+
+  @@index([referenceId])
+  @@index([importBatchId])
+  @@index([sourceDatabase])
+}
+
+model DuplicateGroup {
+  id          String               @id @default(cuid())
+  projectId   String
+  status      DuplicateGroupStatus @default(OPEN)
+  matchReason String
+  similarity  Float?
+  resolvedAt  DateTime?
+  createdAt   DateTime             @default(now())
+
+  project    ReviewProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  references Reference[]
+
+  @@index([projectId, status])
+}
+
+model ReferenceTag {
+  id          String @id @default(cuid())
+  referenceId String
+  tagCode     String
+  label       String
+  explanation Json?
+
+  reference Reference @relation(fields: [referenceId], references: [id], onDelete: Cascade)
+
+  @@unique([referenceId, tagCode])
+  @@index([tagCode])
+}
+
+model ScoringResult {
+  id                String   @id @default(cuid())
+  referenceId       String
+  ruleConfigVersion String
+  scoreTotal        Int
+  subscores         Json
+  triggeredRules    Json
+  tags              String[] @default([])
+  alerts            String[] @default([])
+  computedAt        DateTime @default(now())
+
+  reference Reference @relation(fields: [referenceId], references: [id], onDelete: Cascade)
+
+  @@index([referenceId, computedAt])
+  @@index([ruleConfigVersion])
+}
+
+model CriterionAssessmentRecord {
+  id          String              @id @default(cuid())
+  referenceId String
+  criterion   String
+  assessment  CriterionAssessment @default(NOT_ASSESSED)
+  note        String?
+  assessedAt  DateTime?
+  assessedBy  String?
+
+  reference Reference @relation(fields: [referenceId], references: [id], onDelete: Cascade)
+
+  @@unique([referenceId, criterion])
+  @@index([criterion, assessment])
+}
+
+model ExclusionReason {
+  id          String  @id @default(cuid())
+  projectId   String
+  code        String
+  label       String
+  description String?
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+
+  project          ReviewProject       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  screeningDecisions ScreeningDecision[]
+  decisionEvents   DecisionEvent[]
+
+  @@unique([projectId, code])
+}
+
+model ScreeningDecision {
+  id                String          @id @default(cuid())
+  referenceId       String
+  userId            String
+  status            ScreeningStatus @default(PENDING)
+  exclusionReasonId String?
+  note              String?
+  decidedAt         DateTime?
+  updatedAt         DateTime        @updatedAt
+
+  reference       Reference        @relation(fields: [referenceId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id])
+  exclusionReason ExclusionReason? @relation(fields: [exclusionReasonId], references: [id])
+
+  @@unique([referenceId, userId])
+  @@index([userId, status])
+  @@index([referenceId])
+}
+
+model DecisionEvent {
+  id                String           @id @default(cuid())
+  referenceId       String
+  userId            String
+  fromStatus        ScreeningStatus?
+  toStatus          ScreeningStatus
+  exclusionReasonId String?
+  note              String?
+  calibrationSetId  String?
+  isInitialCalibration Boolean       @default(false)
+  createdAt         DateTime         @default(now())
+
+  reference       Reference        @relation(fields: [referenceId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id])
+  exclusionReason ExclusionReason? @relation(fields: [exclusionReasonId], references: [id])
+  calibrationSet  CalibrationSet?  @relation(fields: [calibrationSetId], references: [id])
+
+  @@index([referenceId, createdAt])
+  @@index([userId])
+  @@index([calibrationSetId])
+}
+
+model CalibrationSet {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  description String?
+  isBlind     Boolean  @default(true)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  project        ReviewProject   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  items          CalibrationItem[]
+  decisionEvents DecisionEvent[]
+
+  @@index([projectId])
+}
+
+model CalibrationItem {
+  id               String @id @default(cuid())
+  calibrationSetId String
+  referenceId      String
+  sortOrder        Int    @default(0)
+
+  calibrationSet CalibrationSet @relation(fields: [calibrationSetId], references: [id], onDelete: Cascade)
+
+  @@unique([calibrationSetId, referenceId])
+  @@index([calibrationSetId, sortOrder])
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  projectId  String?
+  userId     String?
+  action     AuditAction
+  entityType String?
+  entityId   String?
+  payload    Json?
+  createdAt  DateTime    @default(now())
+
+  project ReviewProject? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  user    User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, createdAt])
+  @@index([action])
+}

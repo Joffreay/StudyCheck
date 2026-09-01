@@ -1,0 +1,291 @@
+version: "0.1.0"
+status: draft
+note: >
+  Configuration provisoire dérivée du paramétrage Rayyan (25/08/2026).
+  Les poids sont indicatifs — calibration requise sur échantillon réel.
+  Seule exclusion automatique : langue hors français/anglais.
+
+fieldMultipliers:
+  title: 3.0
+  abstract: 1.5
+  keywords: 2.0
+  mesh: 2.5
+
+subscoreCaps:
+  intervention: 40
+  population: 30
+  pedagogical: 20
+  noise: -30
+
+normalization:
+  rawMin: 0
+  rawMax: 120
+  outputMin: 0
+  outputMax: 100
+
+alerts:
+  - id: NO_ABSTRACT
+    condition: missingAbstract
+  - id: AMBIGUOUS_POPULATION
+    ruleId: POP_GENERIC
+  - id: BROAD_MESH_DRAMA
+    condition: broadMeshDrama
+  - id: NON_FR_EN_LANGUAGE
+    condition: languageNotFrEn
+
+directExclusions:
+  - id: NON_FR_EN_LANGUAGE
+    condition: languageNotFrEn
+    exclusionReasonCode: LANGUAGE
+    label: "Langue hors français/anglais"
+
+tags:
+  CO_INTERVENTION_POTENTIAL:
+    label: "Co-intervention potentielle"
+    terms:
+      - simulation
+      - standardized patient
+      - simulated patient
+      - OSCE
+      - ECOS
+      - role-play
+      - role play
+    scoreEffect: none
+
+  RELATED_INTERVENTION_CONTINGENCY:
+    label: "Intervention apparentée — contingence"
+    terms:
+      - forum theatre
+      - forum theater
+      - theatre of the oppressed
+      - theater of the oppressed
+      - Boal
+      - jeu de rôle improvisé
+      - simulation à composante improvisée
+      - dramatherapy
+      - drama therapy
+      - psychodrama
+      - art therapy
+      - arts psychotherapies
+      - arts psychotherapy
+    scoreEffect: none
+
+rules:
+  # --- Intervention (bloc A Rayyan) ---
+  - id: INT_IMPROVISATION
+    subscore: intervention
+    weight: 12
+    terms:
+      - improvisation
+      - improv
+      - improvisational
+      - improvising
+      - improvisatory
+    fields: [title, abstract, keywords, mesh]
+
+  - id: INT_APPLIED_IMPROV
+    subscore: intervention
+    weight: 14
+    terms:
+      - applied improvisation
+      - medical improv
+      - medical improvisation
+    fields: [title, abstract, keywords, mesh]
+
+  - id: INT_THEORY
+    subscore: intervention
+    weight: 10
+    terms:
+      - spolin
+      - johnstone
+      - second city
+      - yes and
+      - spontaneity
+    fields: [title, abstract, keywords, mesh]
+
+  # Arts-thérapies et psychodrame : interventions apparentées (critère B — relecture humaine)
+  - id: INT_DRAMA_THERAPY
+    subscore: intervention
+    weight: 10
+    terms:
+      - dramatherapy
+      - drama therapy
+      - psychodrama
+      - psychodramatic
+      - art therapy
+      - arts psychotherapies
+      - arts psychotherapy
+      - creative arts therapy
+      - creative arts therapies
+    fields: [title, abstract, keywords, mesh]
+
+  # --- Population (bloc B Rayyan) ---
+  - id: POP_MEDICAL_STUDENT
+    subscore: population
+    weight: 10
+    terms:
+      - medical student
+      - nursing student
+      - pharmacy student
+      - dental student
+    fields: [title, abstract, keywords, mesh]
+
+  - id: POP_TRAINEE
+    subscore: population
+    weight: 8
+    terms:
+      - resident
+      - residency
+      - intern
+      - trainee
+    fields: [title, abstract, keywords, mesh]
+
+  - id: POP_CLINICIAN
+    subscore: population
+    weight: 8
+    terms:
+      - physician
+      - clinician
+      - nurse
+      - pharmacist
+    fields: [title, abstract, keywords, mesh]
+
+  - id: POP_HEALTH_PRO
+    subscore: population
+    weight: 8
+    terms:
+      - health professional
+      - healthcare professional
+      - interprofessional
+      - undergraduate medical
+      - graduate medical education
+      - faculty development
+    fields: [title, abstract, keywords, mesh]
+
+  - id: POP_MENTAL_HEALTH
+    subscore: population
+    weight: 7
+    terms:
+      - psychosis
+      - psychotic
+      - psychiatry
+      - psychiatric
+      - mental health
+      - schizophrenia
+      - severe mental illness
+    fields: [title, abstract, keywords, mesh]
+
+  - id: POP_GENERIC
+    subscore: population
+    weight: 3
+    terms:
+      - student
+      - students
+    fields: [title, abstract]
+    alertOnMatch: AMBIGUOUS_POPULATION
+
+  # --- Contexte pédagogique (bloc C Rayyan) ---
+  - id: CTX_CURRICULUM
+    subscore: pedagogical
+    weight: 4
+    terms:
+      - curriculum
+      - workshop
+      - elective
+      - training program
+    fields: [title, abstract, keywords, mesh]
+
+  - id: CTX_SKILLS
+    subscore: pedagogical
+    weight: 4
+    terms:
+      - communication skills
+      - empathy
+      - teamwork
+      - uncertainty
+      - tolerance of ambiguity
+      - burnout
+      - well-being
+      - self-efficacy
+      - professionalism
+      - debriefing
+    fields: [title, abstract, keywords, mesh]
+
+  # --- Bruit (listes rouges Rayyan) — priorité réduite uniquement ---
+  - id: NOISE_LITERATURE
+    subscore: noise
+    weight: -8
+    terms:
+      - shakespeare
+      - ibsen
+      - chekhov
+      - dante
+      - molière
+      - playwright
+      - poetry
+      - poem
+      - novel
+      - fiction
+      - literary
+      - narrative literature
+      - century
+    fields: [title, abstract, keywords, mesh]
+
+  - id: NOISE_MEDIA
+    subscore: noise
+    weight: -8
+    terms:
+      - television
+      - film
+      - cinema
+      - movie
+      - soap opera
+      - telenovela
+      - documentary
+      - radio drama
+    fields: [title, abstract, keywords, mesh]
+
+  - id: NOISE_MUSIC_DANCE
+    subscore: noise
+    weight: -10
+    terms:
+      - music
+      - musical
+      - jazz
+      - piano
+      - singing
+      - song
+      - choir
+      - dance
+      - dancing
+      - movement therapy
+    fields: [title, abstract, keywords, mesh]
+
+  - id: NOISE_TECHNICAL_IMPROV
+    subscore: noise
+    weight: -10
+    terms:
+      - improvised device
+      - improvised explosive
+      - makeshift
+      - homemade
+      - low-cost alternative
+      - operating theatre
+      - operating theater
+    fields: [title, abstract, keywords, mesh]
+
+combinations:
+  - id: COMBO_INTERVENTION_POPULATION
+    requireAll: [INT_IMPROVISATION, POP_MEDICAL_STUDENT]
+    bonus: 5
+    subscore: intervention
+
+  - id: COMBO_APPLIED_MEDICAL
+    requireAll: [INT_APPLIED_IMPROV, POP_HEALTH_PRO]
+    bonus: 4
+    subscore: intervention
+
+  - id: COMBO_DRAMA_MENTAL_HEALTH
+    requireAll: [INT_DRAMA_THERAPY, POP_MENTAL_HEALTH]
+    bonus: 4
+    subscore: intervention
