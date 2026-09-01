@@ -50,4 +50,4 @@ Prochaines étapes : liste virtualisée, screening humain, calibration double le
 
 ## Documentation
 
-Voir `docs/architecture.md` et les documents méthodologiques dans `Document Thèse Ilyes (Joffrey) (1)/`.
+Voir `docs/architecture.md` et les documents méthodologiques dans ***
