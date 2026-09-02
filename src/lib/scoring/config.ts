@@ -5,7 +5,9 @@ import type { ScoringConfig } from "./types";
 
 let cachedConfig: ScoringConfig | null = null;
 
-export function loadScoringConfig(version = "v0.1.0"): ScoringConfig {
+export const DEFAULT_SCORING_CONFIG_VERSION = "v0.2.0";
+
+export function loadScoringConfig(version = DEFAULT_SCORING_CONFIG_VERSION): ScoringConfig {
   if (cachedConfig && cachedConfig.version === version.replace(/^v/, "")) {
     return cachedConfig;
   }

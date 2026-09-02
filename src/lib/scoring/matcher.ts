@@ -19,12 +19,14 @@ export function getFieldTexts(reference: {
   abstract?: string | null;
   keywords: string[];
   meshTerms: string[];
+  publicationType?: string | null;
 }): Record<ScoringField, string> {
   return {
     title: reference.title ?? "",
     abstract: reference.abstract ?? "",
     keywords: reference.keywords.join("; "),
     mesh: reference.meshTerms.join("; "),
+    publicationType: reference.publicationType ?? "",
   };
 }
 

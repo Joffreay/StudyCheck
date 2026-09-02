@@ -1,4 +1,4 @@
-export type ScoringField = "title" | "abstract" | "keywords" | "mesh";
+export type ScoringField = "title" | "abstract" | "keywords" | "mesh" | "publicationType";
 
 export type SubscoreKey = "intervention" | "population" | "pedagogical" | "noise";
 
@@ -69,6 +69,7 @@ export type ReferenceForScoring = {
   abstract?: string | null;
   keywords: string[];
   meshTerms: string[];
+  publicationType?: string | null;
   language?: string | null;
   hasAbstract: boolean;
 };

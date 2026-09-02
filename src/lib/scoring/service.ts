@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/db";
-import { loadScoringConfig, resetScoringConfigCache } from "@/lib/scoring/config";
+import {
+  DEFAULT_SCORING_CONFIG_VERSION,
+  loadScoringConfig,
+  resetScoringConfigCache,
+} from "@/lib/scoring/config";
 import { scoreReference } from "@/lib/scoring/engine";
 import { recordDecision } from "@/lib/screening/service";
 import { AuditAction, Prisma, UserRole } from "@prisma/client";
@@ -65,6 +69,7 @@ export async function persistScoringResult(referenceId: string) {
     abstract: reference.abstract,
     keywords: reference.keywords,
     meshTerms: reference.meshTerms,
+    publicationType: reference.publicationType,
     language: reference.language,
     hasAbstract: reference.hasAbstract,
   });
@@ -128,7 +133,7 @@ export async function persistScoringResult(referenceId: string) {
 
 export async function rescoreProject(projectId: string, userId?: string) {
   resetScoringConfigCache();
-  const config = loadScoringConfig("v0.1.0");
+  const config = loadScoringConfig(DEFAULT_SCORING_CONFIG_VERSION);
 
   const references = await prisma.reference.findMany({
     where: { projectId, isCanonical: true, mergedIntoId: null },
@@ -166,6 +171,7 @@ export async function rescoreReferences(referenceIds: string[]) {
 
   return {
     processed: results.length,
-    ruleConfigVersion: results[0]?.ruleConfigVersion ?? loadScoringConfig("v0.1.0").version,
+    ruleConfigVersion:
+      results[0]?.ruleConfigVersion ?? loadScoringConfig(DEFAULT_SCORING_CONFIG_VERSION).version,
   };
 }

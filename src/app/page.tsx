@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppShell, PageHeader, StatCard } from "@/components/layout/app-shell";
+import { PrismaScrPanel } from "@/components/export/prisma-scr-panel";
 import { RescorePanel } from "@/components/scoring/rescore-panel";
 import { getCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
@@ -17,7 +18,7 @@ export default async function HomePage() {
       _count: { select: { references: true } },
     },
   });
-  const scoringConfig = loadScoringConfig("v0.1.0");
+  const scoringConfig = loadScoringConfig();
 
   return (
     <AppShell userName={user.name}>
@@ -133,6 +134,12 @@ export default async function HomePage() {
           )}
         </section>
       </div>
+
+      {project ? (
+        <div className="mt-6">
+          <PrismaScrPanel projectId={project.id} />
+        </div>
+      ) : null}
     </AppShell>
   );
 }

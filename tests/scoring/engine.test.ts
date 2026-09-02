@@ -6,7 +6,7 @@ import type { ReferenceForScoring, ScoringConfig } from "@/lib/scoring/types";
 const minimalConfig: ScoringConfig = {
   version: "test",
   status: "test",
-  fieldMultipliers: { title: 3, abstract: 1.5, keywords: 2, mesh: 2.5 },
+  fieldMultipliers: { title: 3, abstract: 1.5, keywords: 2, mesh: 2.5, publicationType: 2 },
   subscoreCaps: { intervention: 40, population: 30, pedagogical: 20, noise: -30 },
   normalization: { rawMin: 0, rawMax: 120, outputMin: 0, outputMax: 100 },
   alerts: [
@@ -217,11 +217,14 @@ describe("scoreReference", () => {
     expect(result.subscores.noise).toBe(0);
   });
 
-  it("charge la configuration Rayyan réelle", () => {
+  it("charge la configuration Rayyan réelle v0.2.0", () => {
     resetScoringConfigCache();
-    const config = loadScoringConfig("v0.1.0");
-    expect(config.rules.length).toBeGreaterThan(10);
+    const config = loadScoringConfig("v0.2.0");
+    expect(config.rules.length).toBeGreaterThan(20);
     expect(config.tags.CO_INTERVENTION_POTENTIAL).toBeDefined();
+    expect(config.rules.some((rule) => rule.id === "INT_IMPROVISATION_FR")).toBe(true);
+    expect(config.rules.some((rule) => rule.id === "DOC_REVIEW")).toBe(true);
+    expect(config.fieldMultipliers.publicationType).toBe(2);
     expect(config.directExclusions?.some((rule) => rule.id === "NON_FR_EN_LANGUAGE")).toBe(true);
   });
 
@@ -267,9 +270,9 @@ describe("scoreReference", () => {
     expect(english.directExclusion).toBeNull();
   });
 
-  it("priorise une revue systématique sur dramatherapy en psychiatrie sans pénalité de bruit", () => {
+  it("pénalise une revue systématique tout en conservant le signal dramatherapy", () => {
     resetScoringConfigCache();
-    const config = loadScoringConfig("v0.1.0");
+    const config = loadScoringConfig("v0.2.0");
 
     const result = scoreReference(
       {
@@ -292,12 +295,71 @@ describe("scoreReference", () => {
       config,
     );
 
-    expect(result.triggeredRules.some((rule) => rule.ruleId === "NOISE_THERAPY")).toBe(false);
     expect(result.triggeredRules.some((rule) => rule.ruleId === "INT_DRAMA_THERAPY")).toBe(true);
     expect(result.triggeredRules.some((rule) => rule.ruleId === "POP_MENTAL_HEALTH")).toBe(true);
-    expect(result.subscores.intervention).toBeGreaterThan(0);
-    expect(result.subscores.noise).toBe(0);
-    expect(result.scoreTotal).toBeGreaterThan(20);
+    expect(result.triggeredRules.some((rule) => rule.ruleId === "DOC_REVIEW")).toBe(true);
+    expect(result.alerts).toContain("DOC_REVIEW");
+    expect(result.subscores.noise).toBeLessThan(0);
     expect(result.triggeredTags.some((tag) => tag.tagCode === "RELATED_INTERVENTION_CONTINGENCY")).toBe(true);
+  });
+
+  it("détecte les termes français d'improvisation théâtrale", () => {
+    resetScoringConfigCache();
+    const config = loadScoringConfig("v0.2.0");
+
+    const result = scoreReference(
+      {
+        title: "Improvisation théâtrale pour étudiants en médecine",
+        abstract: "Atelier de théâtre d'improvisation en formation continue.",
+        keywords: [],
+        meshTerms: [],
+        language: "fre",
+        hasAbstract: true,
+      },
+      config,
+    );
+
+    expect(result.triggeredRules.some((rule) => rule.ruleId === "INT_IMPROVISATION_FR")).toBe(true);
+    expect(result.triggeredRules.some((rule) => rule.ruleId === "INT_IMPROV_THEATRE")).toBe(true);
+    expect(result.triggeredRules.some((rule) => rule.ruleId === "POP_MEDICAL_STUDENT")).toBe(true);
+  });
+
+  it("pénalise l'improvisation organisationnelle non théâtrale", () => {
+    resetScoringConfigCache();
+    const config = loadScoringConfig("v0.2.0");
+
+    const result = scoreReference(
+      {
+        title: "Organizational improvisation in healthcare management",
+        abstract: "",
+        keywords: [],
+        meshTerms: [],
+        hasAbstract: false,
+      },
+      config,
+    );
+
+    expect(result.triggeredRules.some((rule) => rule.ruleId === "NOISE_NON_THEATRICAL")).toBe(true);
+    expect(result.subscores.noise).toBeLessThan(0);
+  });
+
+  it("utilise le type de publication pour détecter une revue", () => {
+    resetScoringConfigCache();
+    const config = loadScoringConfig("v0.2.0");
+
+    const result = scoreReference(
+      {
+        title: "Dramatherapy in psychiatry",
+        abstract: "Overview of dramatherapy approaches.",
+        keywords: [],
+        meshTerms: [],
+        publicationType: "Review; Systematic Review",
+        hasAbstract: true,
+      },
+      config,
+    );
+
+    expect(result.triggeredRules.some((rule) => rule.ruleId === "DOC_REVIEW")).toBe(true);
+    expect(result.alerts).toContain("DOC_REVIEW");
   });
 });

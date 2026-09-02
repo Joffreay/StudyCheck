@@ -1,0 +1,486 @@
+version: "0.2.0"
+status: active
+note: >
+  Aligné sur la Fiche critères et paramétrage Rayyan v1 (02/09/2026)
+  et la Carte du tri v3. Phase 3 permissive : le doute conserve la référence.
+  Seule exclusion automatique : langue hors français/anglais.
+  Poids indicatifs — calibration requise sur échantillon réel.
+
+fieldMultipliers:
+  title: 3.0
+  abstract: 1.5
+  keywords: 2.0
+  mesh: 2.5
+  publicationType: 2.0
+
+subscoreCaps:
+  intervention: 40
+  population: 30
+  pedagogical: 20
+  noise: -30
+
+normalization:
+  rawMin: 0
+  rawMax: 120
+  outputMin: 0
+  outputMax: 100
+
+alerts:
+  - id: NO_ABSTRACT
+    condition: missingAbstract
+  - id: AMBIGUOUS_POPULATION
+    ruleId: POP_GENERIC
+  - id: BROAD_MESH_DRAMA
+    condition: broadMeshDrama
+  - id: NON_FR_EN_LANGUAGE
+    condition: languageNotFrEn
+  - id: DOC_REVIEW
+    ruleId: DOC_REVIEW
+  - id: DOC_CONFERENCE
+    ruleId: DOC_CONFERENCE
+  - id: DOC_PROTOCOL
+    ruleId: DOC_PROTOCOL
+  - id: DOC_RETRACTED
+    ruleId: DOC_RETRACTED
+
+directExclusions:
+  - id: NON_FR_EN_LANGUAGE
+    condition: languageNotFrEn
+    exclusionReasonCode: LANGUAGE
+    label: "Langue hors français/anglais"
+
+tags:
+  CO_INTERVENTION_POTENTIAL:
+    label: "Co-intervention potentielle"
+    terms:
+      - simulation
+      - standardized patient
+      - simulated patient
+      - standardised patient
+      - patient standardisé
+      - patient simulé
+      - OSCE
+      - ECOS
+      - role-play
+      - role play
+      - role-playing
+    scoreEffect: none
+
+  RELATED_INTERVENTION_CONTINGENCY:
+    label: "Intervention apparentée — contingence"
+    terms:
+      - forum theatre
+      - forum theater
+      - théâtre-forum
+      - theatre-forum
+      - theatre of the oppressed
+      - theater of the oppressed
+      - théâtre de l'opprimé
+      - Boal
+      - simulation à composante improvisée
+      - dramatherapy
+      - drama therapy
+      - psychodrama
+      - art therapy
+      - arts psychotherapies
+      - arts psychotherapy
+    scoreEffect: none
+
+rules:
+  # --- Intervention (critère B Rayyan — titre/résumé + texte intégral) ---
+  - id: INT_IMPROVISATION
+    subscore: intervention
+    weight: 12
+    terms:
+      - improvisation
+      - improv
+      - improvisational
+      - improvising
+      - improvise
+      - improvisatory
+    fields: [title, abstract, keywords, mesh]
+
+  - id: INT_IMPROV_THEATRE
+    subscore: intervention
+    weight: 12
+    terms:
+      - improv theatre
+      - improv theater
+      - théâtre d'improvisation
+      - theatre d'improvisation
+      - match d'improvisation
+    fields: [title, abstract, keywords, mesh]
+
+  - id: INT_IMPROVISATION_FR
+    subscore: intervention
+    weight: 12
+    terms:
+      - impro
+      - improvisé
+      - improvisée
+      - improviser
+      - improvisateur
+      - improvisation théâtrale
+      - théâtre appliqué
+    fields: [title, abstract, keywords, mesh]
+
+  - id: INT_APPLIED_IMPROV
+    subscore: intervention
+    weight: 14
+    terms:
+      - applied improvisation
+      - medical improv
+      - medical improvisation
+    fields: [title, abstract, keywords, mesh]
+
+  - id: INT_THEORY
+    subscore: intervention
+    weight: 10
+    terms:
+      - spolin
+      - johnstone
+      - second city
+      - yes and
+      - spontaneity
+    fields: [title, abstract, keywords, mesh]
+
+  # Arts-thérapies et psychodrame : apparentées (critère B — relecture humaine)
+  - id: INT_DRAMA_THERAPY
+    subscore: intervention
+    weight: 10
+    terms:
+      - dramatherapy
+      - drama therapy
+      - psychodrama
+      - psychodramatic
+      - art therapy
+      - arts psychotherapies
+      - arts psychotherapy
+      - creative arts therapy
+      - creative arts therapies
+    fields: [title, abstract, keywords, mesh]
+
+  # --- Population (critère A — titre/résumé + texte intégral) ---
+  - id: POP_MEDICAL_STUDENT
+    subscore: population
+    weight: 10
+    terms:
+      - medical student
+      - medical students
+      - nursing student
+      - nursing students
+      - pharmacy student
+      - dental student
+      - undergraduate medical student
+      - graduate medical student
+      - étudiant en médecine
+      - étudiante en médecine
+      - étudiants en médecine
+      - étudiantes en médecine
+      - externe
+    fields: [title, abstract, keywords, mesh]
+
+  - id: POP_TRAINEE
+    subscore: population
+    weight: 8
+    terms:
+      - resident
+      - residency
+      - registrar
+      - fellow
+      - fellowship
+      - trainee
+      - medical trainee
+      - medical resident
+      - internship
+      - interne
+    fields: [title, abstract, keywords, mesh]
+
+  - id: POP_CLINICIAN
+    subscore: population
+    weight: 8
+    terms:
+      - physician
+      - doctor
+      - clinician
+      - nurse
+      - midwife
+      - pharmacist
+      - dentist
+      - dental
+      - physiotherapist
+      - occupational therapist
+      - speech therapist
+      - speech-language pathologist
+      - genetic counselor
+      - paramedic
+      - allied health
+      - practitioner
+      - soignant
+      - professionnel de santé
+      - infirmier
+      - infirmière
+      - sage-femme
+      - kinésithérapeute
+      - pharmacien
+      - chirurgien-dentiste
+      - médecin généraliste
+    fields: [title, abstract, keywords, mesh]
+
+  - id: POP_HEALTH_PRO
+    subscore: population
+    weight: 8
+    terms:
+      - health professional
+      - healthcare professional
+      - health care professional
+      - health worker
+      - health workers
+      - interprofessional
+      - interprofessionnel
+      - undergraduate medical
+      - graduate medical education
+      - faculty development
+      - continuing medical education
+      - CME
+      - formation continue
+      - DPC
+    fields: [title, abstract, keywords, mesh]
+
+  - id: POP_EDUCATION_CONTEXT
+    subscore: population
+    weight: 6
+    terms:
+      - medical education
+      - nursing education
+      - health professions education
+      - health professional education
+      - medical school
+      - teaching hospital
+      - primary care
+      - family medicine
+      - IFSI
+    fields: [title, abstract, keywords, mesh]
+
+  - id: POP_MENTAL_HEALTH
+    subscore: population
+    weight: 7
+    terms:
+      - psychosis
+      - psychotic
+      - psychiatry
+      - psychiatric
+      - mental health
+      - schizophrenia
+      - severe mental illness
+    fields: [title, abstract, keywords, mesh]
+
+  - id: POP_GENERIC
+    subscore: population
+    weight: 3
+    terms:
+      - student
+      - students
+    fields: [title, abstract]
+    alertOnMatch: AMBIGUOUS_POPULATION
+
+  # --- Contexte pédagogique (critère C — texte intégral ; signaux faibles au pré-tri) ---
+  - id: CTX_CURRICULUM
+    subscore: pedagogical
+    weight: 4
+    terms:
+      - curriculum
+      - workshop
+      - elective
+      - training program
+      - training programme
+      - debriefing
+    fields: [title, abstract, keywords, mesh]
+
+  - id: CTX_SKILLS
+    subscore: pedagogical
+    weight: 4
+    terms:
+      - communication skills
+      - empathy
+      - teamwork
+      - uncertainty
+      - tolerance of ambiguity
+      - burnout
+      - well-being
+      - self-efficacy
+      - professionalism
+    fields: [title, abstract, keywords, mesh]
+
+  # --- Types de document (critère S — pénalisation pré-tri phase 3) ---
+  - id: DOC_EDITORIAL
+    subscore: noise
+    weight: -6
+    terms:
+      - editorial
+      - comment
+      - letter to the editor
+      - viewpoint
+      - erratum
+      - correction
+    fields: [title, abstract, publicationType]
+
+  - id: DOC_REVIEW
+    subscore: noise
+    weight: -8
+    terms:
+      - systematic review
+      - meta-analysis
+      - meta analysis
+      - scoping review
+      - literature review
+      - narrative review
+      - review article
+    fields: [title, abstract, publicationType]
+    alertOnMatch: DOC_REVIEW
+
+  - id: DOC_CONFERENCE
+    subscore: noise
+    weight: -6
+    terms:
+      - conference abstract
+      - congress abstract
+      - meeting abstract
+      - poster presentation
+      - conference proceedings
+      - abstract only
+    fields: [title, abstract, publicationType]
+    alertOnMatch: DOC_CONFERENCE
+
+  - id: DOC_PROTOCOL
+    subscore: noise
+    weight: -6
+    terms:
+      - study protocol
+      - protocol for a study
+      - trial protocol
+    fields: [title, abstract, publicationType]
+    alertOnMatch: DOC_PROTOCOL
+
+  - id: DOC_RETRACTED
+    subscore: noise
+    weight: -12
+    terms:
+      - retracted
+      - retraction of publication
+      - article retracted
+    fields: [title, abstract, publicationType]
+    alertOnMatch: DOC_RETRACTED
+
+  # --- Bruit thématique (listes rouges Rayyan) ---
+  - id: NOISE_LITERATURE
+    subscore: noise
+    weight: -8
+    terms:
+      - shakespeare
+      - ibsen
+      - chekhov
+      - dante
+      - molière
+      - playwright
+      - poetry
+      - poem
+      - novel
+      - fiction
+      - literary
+      - narrative literature
+      - théâtre littéraire
+      - literary theatre
+      - century
+    fields: [title, abstract, keywords, mesh]
+
+  - id: NOISE_MEDIA
+    subscore: noise
+    weight: -8
+    terms:
+      - television
+      - film
+      - cinema
+      - movie
+      - soap opera
+      - telenovela
+      - documentary
+      - radio drama
+    fields: [title, abstract, keywords, mesh]
+
+  - id: NOISE_MUSIC_DANCE
+    subscore: noise
+    weight: -10
+    terms:
+      - music
+      - musical
+      - jazz
+      - piano
+      - singing
+      - song
+      - choir
+      - dance
+      - dancing
+      - movement therapy
+      - improvisation musicale
+      - improvisation dansée
+    fields: [title, abstract, keywords, mesh]
+
+  - id: NOISE_TECHNICAL_IMPROV
+    subscore: noise
+    weight: -10
+    terms:
+      - improvised device
+      - improvised explosive
+      - makeshift
+      - homemade
+      - low-cost alternative
+      - operating theatre
+      - operating theater
+    fields: [title, abstract, keywords, mesh]
+
+  - id: NOISE_NON_THEATRICAL
+    subscore: noise
+    weight: -10
+    terms:
+      - organizational improvisation
+      - organisational improvisation
+      - business improvisation
+      - algorithmic improvisation
+      - improvisational comedy
+      - comedy improv
+    fields: [title, abstract, keywords, mesh]
+
+  - id: NOISE_PSYCH_STUDENT
+    subscore: noise
+    weight: -5
+    terms:
+      - psychology student
+      - psychology students
+    fields: [title, abstract, keywords, mesh]
+
+combinations:
+  - id: COMBO_INTERVENTION_POPULATION
+    requireAll: [INT_IMPROVISATION, POP_MEDICAL_STUDENT]
+    bonus: 5
+    subscore: intervention
+
+  - id: COMBO_APPLIED_MEDICAL
+    requireAll: [INT_APPLIED_IMPROV, POP_HEALTH_PRO]
+    bonus: 4
+    subscore: intervention
+
+  - id: COMBO_DRAMA_MENTAL_HEALTH
+    requireAll: [INT_DRAMA_THERAPY, POP_MENTAL_HEALTH]
+    bonus: 4
+    subscore: intervention
+
+  - id: COMBO_FR_IMPRO_POP
+    requireAll: [INT_IMPROVISATION_FR, POP_CLINICIAN]
+    bonus: 4
+    subscore: intervention
+
+  - id: COMBO_THEATRE_EDUCATION
+    requireAll: [INT_IMPROV_THEATRE, POP_EDUCATION_CONTEXT]
+    bonus: 4
+    subscore: intervention

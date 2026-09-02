@@ -1,4 +1,4 @@
-import { loadScoringConfig } from "./config";
+import { DEFAULT_SCORING_CONFIG_VERSION, loadScoringConfig } from "./config";
 import { shouldAutoExcludeForLanguage } from "./language";
 import {
   findTermMatch,
@@ -57,7 +57,7 @@ function resolveDirectExclusion(
 
 export function scoreReference(
   reference: ReferenceForScoring,
-  config: ScoringConfig = loadScoringConfig("v0.1.0"),
+  config: ScoringConfig = loadScoringConfig(DEFAULT_SCORING_CONFIG_VERSION),
 ): ScoringResultPayload {
   const fields = getFieldTexts(reference);
   const triggeredRules: TriggeredRule[] = [];
@@ -80,7 +80,11 @@ export function scoreReference(
 
   for (const [tagCode, tag] of Object.entries(config.tags)) {
     for (const term of sortTermsByLength(tag.terms)) {
-      const matches = termMatchesAnyField(fields, ["title", "abstract", "keywords", "mesh"], term);
+      const matches = termMatchesAnyField(
+        fields,
+        ["title", "abstract", "keywords", "mesh", "publicationType"],
+        term,
+      );
       for (const match of matches) {
         triggeredTags.push({
           tagCode,
@@ -184,6 +188,6 @@ export function scoreReferences(
   references: ReferenceForScoring[],
   config?: ScoringConfig,
 ): ScoringResultPayload[] {
-  const activeConfig = config ?? loadScoringConfig("v0.1.0");
+  const activeConfig = config ?? loadScoringConfig(DEFAULT_SCORING_CONFIG_VERSION);
   return references.map((reference) => scoreReference(reference, activeConfig));
 }

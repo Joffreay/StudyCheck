@@ -30,7 +30,7 @@ export default async function ImportPage({
     orderBy: { createdAt: "asc" },
     include: { _count: { select: { references: true } } },
   });
-  const scoringConfig = loadScoringConfig("v0.1.0");
+  const scoringConfig = loadScoringConfig();
 
   return (
     <AppShell userName={user.name}>
