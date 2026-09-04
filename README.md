@@ -75,4 +75,3 @@ Voir [`docs/deployment.md`](docs/deployment.md) — Railway (recommandé) ou Doc
 - `docs/architecture.md` — architecture technique et formule de score
 - `docs/deployment.md` — mise en ligne (Railway, Docker)
 - `docs/methodology/` — protocole et paramétrage Rayyan
-- Documents source dans `Document Thèse Ilyes (Joffrey) (1)/` et exports PDF du 02/09/2026 (Carte du tri v3, Fiche critères Rayyan, Annexe équations)
