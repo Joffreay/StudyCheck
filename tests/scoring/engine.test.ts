@@ -8,7 +8,7 @@ const minimalConfig: ScoringConfig = {
   status: "test",
   fieldMultipliers: { title: 3, abstract: 1.5, keywords: 2, mesh: 2.5, publicationType: 2 },
   subscoreCaps: { intervention: 40, population: 30, pedagogical: 20, noise: -30 },
-  normalization: { rawMin: 0, rawMax: 120, outputMin: 0, outputMax: 100 },
+  normalization: { rawMin: 0, rawMax: 90, outputMin: 0, outputMax: 100 },
   alerts: [
     { id: "NO_ABSTRACT", condition: "missingAbstract" },
     { id: "BROAD_MESH_DRAMA", condition: "broadMeshDrama" },
@@ -224,6 +224,7 @@ describe("scoreReference", () => {
     expect(config.tags.CO_INTERVENTION_POTENTIAL).toBeDefined();
     expect(config.rules.some((rule) => rule.id === "INT_IMPROVISATION_FR")).toBe(true);
     expect(config.rules.some((rule) => rule.id === "DOC_REVIEW")).toBe(true);
+    expect(config.rules.some((rule) => rule.id === "NOISE_NON_ADULT_POPULATION")).toBe(true);
     expect(config.fieldMultipliers.publicationType).toBe(2);
     expect(config.directExclusions?.some((rule) => rule.id === "NON_FR_EN_LANGUAGE")).toBe(true);
   });
@@ -361,5 +362,27 @@ describe("scoreReference", () => {
 
     expect(result.triggeredRules.some((rule) => rule.ruleId === "DOC_REVIEW")).toBe(true);
     expect(result.alerts).toContain("DOC_REVIEW");
+  });
+
+  it("pénalise une population enfant ou adolescente", () => {
+    resetScoringConfigCache();
+    const config = loadScoringConfig("v0.2.0");
+
+    const pediatric = scoreReference(
+      {
+        title: "Improvisation workshop for pediatric nursing students caring for children",
+        abstract: "Adolescent patients participated in theatre exercises.",
+        keywords: [],
+        meshTerms: ["Child", "Adolescent"],
+        hasAbstract: true,
+      },
+      config,
+    );
+
+    expect(pediatric.triggeredRules.some((rule) => rule.ruleId === "NOISE_NON_ADULT_POPULATION")).toBe(
+      true,
+    );
+    expect(pediatric.alerts).toContain("NON_ADULT_POPULATION");
+    expect(pediatric.subscores.noise).toBeLessThan(0);
   });
 });

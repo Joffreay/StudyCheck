@@ -5,8 +5,6 @@ import {
   sankey,
   sankeyJustify,
   sankeyLinkHorizontal,
-  type SankeyLinkMinimal,
-  type SankeyNodeMinimal,
 } from "d3-sankey";
 import type { PrismaScrFlow } from "@/lib/export/prisma-scr-types";
 import {
@@ -15,16 +13,17 @@ import {
   type SankeyNodeDef,
 } from "@/lib/export/prisma-scr-sankey";
 
-type LayoutNode = SankeyNodeMinimal<SankeyNodeDef, SankeyLinkMinimal<SankeyNodeDef, SankeyNodeDef>> &
-  SankeyNodeDef & {
-    x0?: number;
-    x1?: number;
-    y0?: number;
-    y1?: number;
-    value?: number;
-  };
+type LinkInput = { source: string; target: string; value: number };
 
-type LayoutLink = SankeyLinkMinimal<LayoutNode, LayoutNode> & {
+type LayoutNode = SankeyNodeDef & {
+  x0?: number;
+  x1?: number;
+  y0?: number;
+  y1?: number;
+  value?: number;
+};
+
+type LayoutLink = LinkInput & {
   width?: number;
   source: LayoutNode;
   target: LayoutNode;
@@ -67,7 +66,7 @@ export function PrismaScrSankeyChart({ flow }: { flow: PrismaScrFlow }) {
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
 
-    const generator = sankey<SankeyNodeDef, { source: string; target: string; value: number }>()
+    const generator = sankey<SankeyNodeDef, LinkInput>()
       .nodeId((node) => node.id)
       .nodeWidth(16)
       .nodePadding(14)
@@ -106,7 +105,7 @@ export function PrismaScrSankeyChart({ flow }: { flow: PrismaScrFlow }) {
     );
   }
 
-  const linkPath = sankeyLinkHorizontal<LayoutNode, LayoutLink>();
+  const linkPath = sankeyLinkHorizontal<SankeyNodeDef, LinkInput>();
 
   return (
     <div ref={containerRef} className="w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white p-3">

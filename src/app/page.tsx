@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppShell, PageHeader, StatCard } from "@/components/layout/app-shell";
+import { ImportBatchesList } from "@/components/import/import-batches-list";
 import { PrismaScrPanel } from "@/components/export/prisma-scr-panel";
 import { RescorePanel } from "@/components/scoring/rescore-panel";
 import { getCurrentUser } from "@/lib/auth/session";
@@ -14,8 +15,8 @@ export default async function HomePage() {
   const project = await prisma.reviewProject.findFirst({
     orderBy: { createdAt: "asc" },
     include: {
-      importBatches: { orderBy: { createdAt: "desc" }, take: 5 },
-      _count: { select: { references: true } },
+      importBatches: { orderBy: { createdAt: "desc" } },
+      _count: { select: { references: true, importBatches: true } },
     },
   });
   const scoringConfig = loadScoringConfig();
@@ -59,7 +60,7 @@ export default async function HomePage() {
           />
           <StatCard
             label="Imports"
-            value={project?.importBatches.length ?? 0}
+            value={project?._count.importBatches ?? 0}
             hint="Fichiers RIS, NBIB ou CSV traités"
             accent="blue"
           />
@@ -116,21 +117,21 @@ export default async function HomePage() {
             </Link>
           </div>
           {project?.importBatches.length ? (
-            <ul className="divide-y divide-slate-100">
-              {project.importBatches.map((batch) => (
-                <li key={batch.id} className="px-6 py-4 text-sm">
-                  <p className="font-medium text-slate-900">{batch.filename}</p>
-                  <p className="mt-1 text-slate-600">
-                    {batch.sourceDatabase} · {batch.format}
-                  </p>
-                  <p className="mt-2 text-xs text-slate-500">
-                    {batch.recordsImported} importées · {batch.recordsSkipped} ignorées
-                  </p>
-                </li>
-              ))}
-            </ul>
+            <ImportBatchesList
+              batches={project.importBatches.map((batch) => ({
+                id: batch.id,
+                filename: batch.filename,
+                sourceDatabase: batch.sourceDatabase,
+                format: batch.format,
+                recordsImported: batch.recordsImported,
+                recordsSkipped: batch.recordsSkipped,
+                recordsTotal: batch.recordsTotal,
+                importedAt: batch.importedAt?.toISOString() ?? null,
+                status: batch.status,
+              }))}
+            />
           ) : (
-            <div className="card-body text-sm text-slate-500">Aucun import pour le moment.</div>
+            <ImportBatchesList batches={[]} />
           )}
         </section>
       </div>

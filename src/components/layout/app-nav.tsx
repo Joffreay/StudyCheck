@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const NAV_ITEMS = [
   { href: "/", label: "Tableau de bord" },
   { href: "/references", label: "Références" },
+  { href: "/duplicates", label: "Doublons" },
   { href: "/import", label: "Import" },
 ];
 

@@ -37,6 +37,7 @@ Comptes seed (modifiables via `.env`) :
 - `npm run db:push` — synchroniser le schéma Prisma
 - `npm run db:seed` — projet par défaut + 2 lecteurs + motifs d'exclusion
 - `npx tsx scripts/rescore-project.ts` — recalculer les scores du projet avec la config active
+- `npx tsx scripts/detect-duplicates.ts` — détecter les doublons probables par titre
 
 ## Phase actuelle
 
@@ -48,7 +49,8 @@ Fondations + moteur de scoring **v0.2.0** (Fiche critères Rayyan du 02/09/2026)
 - moteur lexical transparent (`config/scoring/v0.2.0.yaml`, listes Rayyan enrichies EN/FR)
 - tri par score sur l'ensemble des références filtrées (pas page par page)
 - export **PRISMA-ScR** (JSON, CSV, Markdown) + diagramme Sankey sur le tableau de bord
-- tests parsing, scoring et export
+- **doublons probables par titre** — détection automatique, validation et fusion manuelle (`/duplicates`)
+- tests parsing, scoring, doublons et export
 
 La config `v0.1.0.yaml` est conservée pour l'historique des scores déjà calculés.
 
@@ -62,7 +64,11 @@ npx tsx scripts/rescore-project.ts
 
 Ou via le bouton **Recalculer les scores** sur le tableau de bord / page import.
 
-Prochaines étapes : calibration double lecture + kappa, déduplication probable UI, critères A/B/C en texte intégral.
+Prochaines étapes : calibration double lecture + kappa, critères A/B/C en texte intégral.
+
+## Mise en ligne
+
+Voir [`docs/deployment.md`](docs/deployment.md) — Railway (recommandé) ou Docker Compose production.
 
 ## Documentation
 

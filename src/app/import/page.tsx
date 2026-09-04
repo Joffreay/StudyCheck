@@ -67,6 +67,7 @@ export default async function ImportPage({
             <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
               <li>Un import par base source pour conserver la traçabilité PRISMA-ScR.</li>
               <li>Les doublons DOI/PMID sont fusionnés automatiquement.</li>
+              <li>Les titres identiques créent un groupe à valider dans Doublons.</li>
               <li>Le scoring est recalculé immédiatement après import.</li>
               <li>Les références sans résumé restent examinables.</li>
             </ul>

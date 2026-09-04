@@ -7,7 +7,7 @@ Application web de **pré-tri** pour une revue de portée sur l'improvisation th
 ## Périmètre v1
 
 - Import RIS / NBIB / CSV avec provenance conservée
-- Fusion automatique DOI/PMID ; doublons probables par titre soumis à validation humaine
+- Fusion automatique DOI/PMID ; **doublons probables par titre** (titre normalisé exact) via page Doublons — fusion manuelle ou ignore
 - Moteur lexical transparent (config YAML versionnée), calibré ultérieurement sur l'échantillon réel
 - Décisions humaines : `PENDING`, `RETAIN`, `EXCLUDE`, `UNCERTAIN`
 - **Calibration à deux lecteurs** (~100 refs) : mode aveugle, accord brut, kappa Cohen, résolution des désaccords
@@ -89,6 +89,14 @@ Version par défaut : `DEFAULT_SCORING_CONFIG_VERSION` dans `src/lib/scoring/con
 - UI : panneau tableau de bord avec diagramme Sankey (`d3-sankey`)
 - Flux : identification → déduplication → screening par lecteur + consensus → éligibilité (double RETAIN) → inclusion
 
+## Doublons par titre
+
+- Détection : `titleNormalized` identique (≥ 15 caractères), hors refs déjà fusionnées (`mergedIntoId`)
+- Automatique à l'import + bouton « Analyser les titres » (`/duplicates`)
+- Actions : fusionner (référence la plus complète par défaut) ou ignorer le groupe
+- API : `GET/POST /api/duplicates`, `POST /api/duplicates/[id]`
+- Script : `npx tsx scripts/detect-duplicates.ts`
+
 ## Architecture
 
 - Next.js 15 + TypeScript + Tailwind
@@ -100,7 +108,7 @@ Version par défaut : `DEFAULT_SCORING_CONFIG_VERSION` dans `src/lib/scoring/con
 ## Lots fonctionnels
 
 1. ~~Fondations~~ — init, modèle, auth, import, tests parsing
-2. Déduplication probable + audit fusions
+2. ~~Déduplication probable + audit fusions~~ — détection titre normalisé, fusion/dismiss manuels
 3. ~~Moteur de scoring v0.2.0~~ + tests unitaires
 4. ~~Liste + filtres + tri global par score~~
 5. ~~Screening + historique décisions~~

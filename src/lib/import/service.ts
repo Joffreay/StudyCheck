@@ -9,6 +9,7 @@ import {
   normalizePmid,
   normalizeTitle,
 } from "@/lib/references/normalize";
+import { mergeReferenceFields } from "@/lib/references/merge-fields";
 import { AuditAction, ImportStatus, Prisma } from "@prisma/client";
 
 export type ImportRequest = {
@@ -25,46 +26,15 @@ export type ImportSummary = {
   recordsImported: number;
   recordsSkipped: number;
   recordsMerged: number;
+  duplicateGroupsCreated: number;
   errors: Array<{ line?: number; message: string }>;
 };
 
-function mergeReferenceFields(existing: {
-  title: string;
-  abstract: string | null;
-  keywords: string[];
-  meshTerms: string[];
-  language: string | null;
-  publicationType: string | null;
-  year: number | null;
-  authors: unknown;
-  doi: string | null;
-  pmid: string | null;
-  journal: string | null;
-  volume: string | null;
-  issue: string | null;
-  pages: string | null;
-}, incoming: ParsedReference) {
-  const abstract =
-    (existing.abstract?.length ?? 0) >= (incoming.abstract?.length ?? 0)
-      ? existing.abstract
-      : incoming.abstract ?? existing.abstract;
-
-  return {
-    title: existing.title || incoming.title,
-    abstract: abstract ?? null,
-    keywords: Array.from(new Set([...existing.keywords, ...incoming.keywords])),
-    meshTerms: Array.from(new Set([...existing.meshTerms, ...incoming.meshTerms])),
-    language: existing.language ?? incoming.language ?? null,
-    publicationType: existing.publicationType ?? incoming.publicationType ?? null,
-    year: existing.year ?? incoming.year ?? null,
-    authors: existing.authors ?? incoming.authors,
-    doi: existing.doi ?? normalizeDoi(incoming.doi) ?? null,
-    pmid: existing.pmid ?? normalizePmid(incoming.pmid) ?? null,
-    journal: existing.journal ?? incoming.journal ?? null,
-    volume: existing.volume ?? incoming.volume ?? null,
-    issue: existing.issue ?? incoming.issue ?? null,
-    pages: existing.pages ?? incoming.pages ?? null,
-  };
+function mergeReferenceFieldsFromParsed(
+  existing: Parameters<typeof mergeReferenceFields>[0],
+  incoming: ParsedReference,
+) {
+  return mergeReferenceFields(existing, incoming);
 }
 
 export async function importBibliographicFile(request: ImportRequest): Promise<ImportSummary> {
@@ -118,7 +88,7 @@ export async function importBibliographicFile(request: ImportRequest): Promise<I
     });
 
     if (existing) {
-      const merged = mergeReferenceFields(existing, item);
+      const merged = mergeReferenceFieldsFromParsed(existing, item);
       const hasAbstract = Boolean(merged.abstract?.trim());
       const keywordsCount = merged.keywords.length;
       const meshCount = merged.meshTerms.length;
@@ -126,7 +96,20 @@ export async function importBibliographicFile(request: ImportRequest): Promise<I
       await prisma.reference.update({
         where: { id: existing.id },
         data: {
-          ...merged,
+          title: merged.title,
+          abstract: merged.abstract,
+          keywords: merged.keywords,
+          meshTerms: merged.meshTerms,
+          language: merged.language,
+          publicationType: merged.publicationType,
+          year: merged.year,
+          authors: merged.authors as Prisma.InputJsonValue,
+          doi: merged.doi,
+          pmid: merged.pmid,
+          journal: merged.journal,
+          volume: merged.volume,
+          issue: merged.issue,
+          pages: merged.pages,
           hasAbstract,
           infoCompleteness: computeInfoCompleteness({
             hasAbstract,
@@ -206,6 +189,9 @@ export async function importBibliographicFile(request: ImportRequest): Promise<I
     await rescoreReferences(affectedReferenceIds);
   }
 
+  const { detectTitleDuplicates } = await import("@/lib/duplicates/service");
+  const duplicateDetection = await detectTitleDuplicates(request.projectId);
+
   recordsSkipped = parsed.errors.length;
 
   await prisma.importBatch.update({
@@ -229,6 +215,7 @@ export async function importBibliographicFile(request: ImportRequest): Promise<I
         recordsImported,
         recordsMerged,
         recordsSkipped,
+        duplicateGroupsCreated: duplicateDetection.groupsCreated,
         errors: parsed.errors,
       },
     },
@@ -240,6 +227,7 @@ export async function importBibliographicFile(request: ImportRequest): Promise<I
     recordsImported,
     recordsSkipped,
     recordsMerged,
+    duplicateGroupsCreated: duplicateDetection.groupsCreated,
     errors: parsed.errors,
   };
 }

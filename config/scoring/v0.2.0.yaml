@@ -20,8 +20,9 @@ subscoreCaps:
   noise: -30
 
 normalization:
+  # rawMax = somme des plafonds positifs (40 + 30 + 20) — meilleur cas → 100
   rawMin: 0
-  rawMax: 120
+  rawMax: 90
   outputMin: 0
   outputMax: 100
 
@@ -42,6 +43,8 @@ alerts:
     ruleId: DOC_PROTOCOL
   - id: DOC_RETRACTED
     ruleId: DOC_RETRACTED
+  - id: NON_ADULT_POPULATION
+    ruleId: NOISE_NON_ADULT_POPULATION
 
 directExclusions:
   - id: NON_FR_EN_LANGUAGE
@@ -458,6 +461,58 @@ rules:
       - psychology student
       - psychology students
     fields: [title, abstract, keywords, mesh]
+
+  # Population non majeure (enfant / adolescent) — hors périmètre critère A
+  - id: NOISE_NON_ADULT_POPULATION
+    subscore: noise
+    weight: -8
+    terms:
+      - pediatric
+      - paediatric
+      - pediatrics
+      - paediatrics
+      - child
+      - children
+      - childhood
+      - school-age child
+      - school-age children
+      - school child
+      - school children
+      - adolescent
+      - adolescents
+      - adolescence
+      - teenage
+      - teenager
+      - teen
+      - teens
+      - infant
+      - infants
+      - infancy
+      - neonatal
+      - neonate
+      - neonates
+      - newborn
+      - newborns
+      - toddler
+      - toddlers
+      - juvenile
+      - young patient
+      - young patients
+      - enfant
+      - enfants
+      - enfance
+      - pédiatrique
+      - pediatrique
+      - pédiatrie
+      - pediatrie
+      - nourrisson
+      - nouveau-né
+      - nouveaux-nés
+      - bébé
+      - prematuré
+      - premature infant
+    fields: [title, abstract, keywords, mesh]
+    alertOnMatch: NON_ADULT_POPULATION
 
 combinations:
   - id: COMBO_INTERVENTION_POPULATION

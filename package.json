@@ -7,6 +7,7 @@
     "dev:clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next dev",
     "build": "next build",
     "start": "next start",
+    "start:production": "prisma db push && next start",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
