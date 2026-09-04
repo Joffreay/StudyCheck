@@ -28,10 +28,8 @@ COPY --from=builder /app/scripts/docker-entrypoint.sh ./docker-entrypoint.sh
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Prisma CLI + dépendances transitives (effect, etc.) pour db push au démarrage
-COPY package.json package-lock.json ./
-RUN npm install prisma@6.16.1 --no-save \
-  && chown -R nextjs:nodejs node_modules
+# Fusionne Prisma CLI + deps (effect, engines…) dans node_modules de l'app
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/. ./node_modules/
 
 RUN chmod +x ./docker-entrypoint.sh
 
